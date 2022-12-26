@@ -1,20 +1,27 @@
-class case:
+import tkinter
+
+
+class Case:
     def __init__(self, nbrmaxpions, nbrpions=0, joueurs=0):
         self.__nbrpions = nbrpions
         self.__nbrmaxpions = nbrmaxpions
         self.__joueurs = joueurs
+        self.__has_changed = True
 
-    def Set_Joueurs(self, x):
+    def set_joueurs(self, x):
         self.__joueurs = x
+        self.set_changed(True)
 
-    def Get_Joueurs(self):
+    def get_joueurs(self):
         return self.__joueurs
 
-    def AjoutPion(self):
+    def ajout_pion(self):
         self.__nbrpions += 1
+        self.set_changed(True)
 
-    def Set_NbrPions(self, x):
+    def set_nbr_pions(self, x):
         self.__nbrpions = x
+        self.set_changed(True)
 
     def get_nbrpions(self):
         return self.__nbrpions
@@ -22,20 +29,32 @@ class case:
     def get_nbrmaxpions(self):
         return self.__nbrmaxpions
 
+    def has_changed(self):
+        return self.__has_changed
 
-class jeu:
-    def __init__(self, listejoueurs=[], compteur=1, poser=False,
-                 couleurs={1: "bleu", 2: "rouge", 3: "jaune", 4: "vert", 5: "orange", 6: "rose", 7: "violet",
-                           8: "cyan"}):
+    def set_changed(self, boolean):
+        self.__has_changed = boolean
+
+
+class Game:
+    def __init__(self, listejoueurs=[], compteur=1, poser=False):
+        self.couleurs = {1: "bleu", 2: "rouge", 3: "jaune", 4: "vert", 5: "orange", 6: "rose", 7: "violet",
+                         8: "cyan"}
         self.listejoueurs = listejoueurs
-        self.couleurs = couleurs
         self.compteur = compteur
-        self.Nombrejoueurs()
+        self.nombre_joueurs()
         self.CompteurJoueur()
-        self.TailleJeu()
+        self.taille_jeu()
         self.poser = poser
-        self.__cases = [[case(self.QuelTypeCases(i, j), 0, 0) for j in range(self.colonnes)] for i in
+        self.__cases = [[Case(self.quel_type_case(i, j), 0, 0) for j in range(self.colonnes)] for i in
                         range(self.lignes)]
+        self.__root = tkinter.Tk()
+        self.__root.title("Example of GUI")
+        self.__frame1 = tkinter.Frame(self.__root)
+        self.affichage()
+        self.affichageJ()
+        self.__frame1.grid(row=0, column=0, rowspan=2)
+        self.__root.mainloop()
 
     def CompteurJoueur(self):
         for k in range(1, self.nbrjoueurs + 1):
@@ -67,17 +86,17 @@ class jeu:
             self.FinDePartie()
 
     def FinDePartie(self):
-        print("Le gagnant estle joueur ", self.listejoueurs[0])
+        print("Le gagnant est le joueur ", self.listejoueurs[0])
 
     def PossiblePoserPion(self):
         for lignes in self.__cases:
             for case in lignes:
-                if (case.Get_Joueurs() == self.compteur):
+                if (case.get_joueurs() == self.compteur):
                     return True
         else:
             return False
 
-    def TailleJeu(self):
+    def taille_jeu(self):
         x = input("lignes")
         y = input("colonnes")
         if x == "" and y == "":
@@ -90,42 +109,50 @@ class jeu:
             return self.lignes, self.colonnes
         else:
             print("TA TAILLE N'EST PAS ADAPTEE")
-            return self.TailleJeu()
+            return self.taille_jeu()
 
-    def Nombrejoueurs(self):
+    def nombre_joueurs(self):
         self.nbrjoueurs = eval(input("Nombre de joueurs, si 1 joueur, une IA sera votre adversaire"))
         if 1 < self.nbrjoueurs < 9:
             return self.nbrjoueurs
         else:
-            return self.Nombrejoueurs()
+            return self.nombre_joueurs()
 
     def affichage(self):
-        for lignes in self.__cases:
-            for case in lignes:
-                print(case.get_nbrpions(), end="")
-            print()
+        for x in range(len(self.__cases)):
+            for y in range(len(self.__cases[x])):
+                case = self.__cases[x][y]
+                if case.has_changed():
+                    canvas1 = tkinter.Canvas(self.__frame1)
+                    canvas1.grid(row=x, column=y)
+                    canvas1.config(width=5, height=5, highlightthickness=1, bd=0,
+                                   bg=self.couleurs[case.get_joueurs()])
+                    canvas1.bind('<Button-1>', lambda event, coord=(x, y): self.jouer(coord))
 
     def affichageJ(self):
         for lignes in self.__cases:
             for case in lignes:
-                print(case.Get_Joueurs(), end="")
+                print(case.get_joueurs(), end="")
             print()
 
-    def Jouer(self, coordX, coordY):
-        if self.__cases[coordX][coordY].Get_Joueurs() == self.compteur or self.__cases[coordX][
-            coordY].Get_Joueurs() == 0:
-            if self.__cases[coordX][coordY].get_nbrpions() == self.__cases[coordX][coordY].get_nbrmaxpions():
-                self.Explosion(coordX, coordY)
+    def jouer(self, coord):
+        coordX = coord[0]
+        coordY = coord[1]
+        case = self.__cases[coordX][coordY]
+        if case.get_joueurs() == self.compteur or case.get_joueurs() == 0:
+            case.set_changed(True)
+            if case.get_nbrpions() == case.get_nbrmaxpions():
+                self.explosion(coordX, coordY)
             else:
-                self.AjouterPion(coordX, coordY)
+                self.ajouter_pion(coordX, coordY)
             self.Tour()
             self.affichage()
 
-    def AjouterPion(self, coordX, coordY):
-        self.__cases[coordX][coordY].Set_Joueurs(self.compteur)
-        self.__cases[coordX][coordY].AjoutPion()
+    def ajouter_pion(self, coordX, coordY):
+        self.__cases[coordX][coordY].set_joueurs(self.compteur)
+        self.__cases[coordX][coordY].ajout_pion()
 
-    def QuelTypeCases(self, coordX, coordY):
+    def quel_type_case(self, coordX, coordY):
         if coordX == 0 and coordY == 0:
             return 1  # La case est un coin
         if coordX == 0 and coordY == self.colonnes - 1:
@@ -145,27 +172,27 @@ class jeu:
         else:
             return 3  # La case n'est ni un côté ni un coin
 
-    def Explosion(self, coordX, coordY):  # Je change l'attribut de la couleur joueur des cases   A FAIRE
-        self.__cases[coordX][coordY].Set_NbrPions(0)
-        self.__cases[coordX][coordY].Set_Joueurs(0)
+    def explosion(self, coordX, coordY):  # Je change l'attribut de la couleur joueur des cases   A FAIRE
+        self.__cases[coordX][coordY].set_nbr_pions(0)
+        self.__cases[coordX][coordY].set_joueurs(0)
         if coordX != 0:
-            self.__cases[coordX - 1][coordY].Set_Joueurs(self.compteur)
-            self.ReactionEnChaines(coordX - 1, coordY)
+            self.__cases[coordX - 1][coordY].set_joueurs(self.compteur)
+            self.reaction_en_chaines(coordX - 1, coordY)
         if coordX != self.lignes - 1:
-            self.__cases[coordX + 1][coordY].Set_Joueurs(self.compteur)
-            self.ReactionEnChaines(coordX + 1, coordY)
+            self.__cases[coordX + 1][coordY].set_joueurs(self.compteur)
+            self.reaction_en_chaines(coordX + 1, coordY)
         if coordY != 0:
-            self.__cases[coordX][coordY - 1].Set_Joueurs(self.compteur)
-            self.ReactionEnChaines(coordX, coordY - 1)
+            self.__cases[coordX][coordY - 1].set_joueurs(self.compteur)
+            self.reaction_en_chaines(coordX, coordY - 1)
         if coordY != self.colonnes - 1:
-            self.__cases[coordX][coordY + 1].Set_Joueurs(self.compteur)
-            self.ReactionEnChaines(coordX, coordY + 1)
+            self.__cases[coordX][coordY + 1].set_joueurs(self.compteur)
+            self.reaction_en_chaines(coordX, coordY + 1)
 
-    def ReactionEnChaines(self, coordX, coordY):
+    def reaction_en_chaines(self, coordX, coordY):
         if self.__cases[coordX][coordY].get_nbrpions() == self.__cases[coordX][coordY].get_nbrmaxpions():
-            self.Explosion(coordX, coordY)
+            self.explosion(coordX, coordY)
         else:
-            self.AjouterPion(coordX, coordY)
+            self.ajouter_pion(coordX, coordY)
 
 # A chaque tour -> on change de joueur,
 #                  es ce que le joueur peut jouer,
