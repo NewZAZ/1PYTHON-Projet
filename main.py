@@ -1,4 +1,3 @@
-import random
 import tkinter
 from tkinter import *
 
@@ -46,30 +45,35 @@ class Game:
         self.couleurs = {0: "gray", 1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "pink", 7: "purple",
                          8: "cyan"}
 
-        self.poser = False
-
         self.__root = tkinter.Tk()
         self.__root.title("Example of GUI")
+        self.__root.config(bg='black')
 
         self.__selectionFrame = tkinter.Frame(self.__root)
+        self.__selectionFrame.config(bg='white')
         self.__selectionFrame.grid(row=0, column=1, padx=25)
 
-        Label(self.__selectionFrame, text="Nombre de colonne(s) : ") \
-            .grid(row=0, column=0)
+        columnLabel = Label(self.__selectionFrame, text="Nombre de colonne(s) : ")
+        columnLabel.config(bg='white')
+        columnLabel.grid(row=0, column=0)
 
         self.__columnText = Text(self.__selectionFrame, height=1, width=20, bg='white')
 
         self.__columnText.grid(row=0, column=1)
 
-        Label(self.__selectionFrame, text="Nombre de ligne(s) : ") \
-            .grid(row=1, column=0)
+        rowLabel = Label(self.__selectionFrame, text="Nombre de ligne(s) : ")
+
+        rowLabel.config(bg='white')
+        rowLabel.grid(row=1, column=0)
 
         self.__rowText = Text(self.__selectionFrame, height=1, width=20, bg='white')
 
         self.__rowText.grid(row=1, column=1)
 
-        Button(self.__selectionFrame, height=1, width=10, text="Commencez",
-               command=lambda: self.canStart()).grid(row=2, column=0)
+        startButton = Button(self.__selectionFrame, height=1, width=10, text="Commencez",
+                             command=lambda: self.canStart())
+        startButton.config(bg='white')
+        startButton.grid(row=2, column=0)
 
         self.__root.mainloop()
 
@@ -92,27 +96,26 @@ class Game:
             print("NOP3")
 
     def startGame(self):
-
+        self.poser = False
         self.__cases = [[Case(self.quel_type_case(i, j), 0, 0) for j in range(self.colonnes)] for i in
                         range(self.lignes)]
         self.listejoueurs = [1, 2, 3, 4]
 
         self.compteur = self.listejoueurs[0]
         self.nombre_joueurs()
+        self.showNextPlayer()
 
         self.__gameFrame = tkinter.Frame(self.__root)
         self.affichage()
         self.__gameFrame.grid(row=0, column=0, rowspan=5)
 
     def Gagnant(self):
-        print(len(self.listejoueurs))
-        if len(self.listejoueurs) - 1 == 1:
+        if len(self.listejoueurs) == 1:
             return True
         else:
             return False
 
     def Tour(self):
-        print(self.listejoueurs)
         if not self.Gagnant():
             if self.poser:
                 if self.compteur == len(self.listejoueurs):
@@ -120,8 +123,8 @@ class Game:
                 else:
                     self.compteur += 1
                 if not self.PossiblePoserPion():
-                    print(self.listejoueurs, self.compteur)
-                    self.listejoueurs.pop(self.compteur -1)
+                    self.listejoueurs.pop(self.compteur - 1)
+                    self.compteur -= 1
                     self.Tour()
             else:
                 if self.compteur == len(self.listejoueurs):
@@ -129,13 +132,17 @@ class Game:
                     self.poser = True
                 else:
                     self.compteur += 1
-            canvas = Canvas(self.__selectionFrame, width=64, height=64, bg='white')
-
-            canvas.create_oval(0, 64, 64, 0, fill=self.couleurs[self.compteur])
-
-            canvas.grid(column=0, row=4)
+            self.showNextPlayer()
         else:
             self.FinDePartie()
+
+    def showNextPlayer(self):
+        canvas = Canvas(self.__root, width=64, height=64)
+
+        canvas.create_oval(8, 56, 56, 8, fill=self.couleurs[self.listejoueurs[self.compteur - 1]])
+
+        canvas.grid(pady=10, column=0, row=5)
+        canvas.config(bg='black', borderwidth=0, highlightthickness=0)
 
     def FinDePartie(self):
         print("Le gagnant est le joueur ", self.listejoueurs[0])
@@ -143,7 +150,7 @@ class Game:
     def PossiblePoserPion(self):
         for lignes in self.__cases:
             for case in lignes:
-                if case.get_joueurs() == self.compteur:
+                if case.get_joueurs() == self.listejoueurs[self.compteur - 1]:
                     return True
         else:
             return False
@@ -170,16 +177,15 @@ class Game:
         coordonate_2_pionts = (8, 28, 28, 48)
         coordonate_3_pionts = (8, 24, 24, 40, 40, 56)
 
-
-
         for x in range(len(self.__cases)):
             for y in range(len(self.__cases[x])):
                 case = self.__cases[x][y]
                 if case.has_changed():
                     case.set_changed(False)
                     canvas1 = tkinter.Canvas(self.__gameFrame)
-                    canvas1.grid(row=x, column=y)
-                    canvas1.config(width=64, height=64, highlightthickness=1, bd=0, bg='white')
+                    canvas1.grid(row=x, column=y, padx=0, pady=0)
+                    canvas1.config(width=64, height=64, highlightbackground="red", highlightcolor="red",
+                                   highlightthickness=1, bg='#004F61')
 
                     if case.get_nbrpions() == 1:
                         canvas1.create_oval(x + coordonate_1_pionts[0], y + coordonate_1_pionts[0],
@@ -208,7 +214,7 @@ class Game:
         coordX = coord[0]
         coordY = coord[1]
         case = self.__cases[coordX][coordY]
-        if case.get_joueurs() == self.compteur or case.get_joueurs() == 0:
+        if case.get_joueurs() == self.listejoueurs[self.compteur - 1] or case.get_joueurs() == 0:
             case.set_changed(True)
             if case.get_nbrpions() == case.get_nbrmaxpions():
                 self.explosion(coordX, coordY)
@@ -218,7 +224,7 @@ class Game:
             self.affichage()
 
     def ajouter_pion(self, coordX, coordY):
-        self.__cases[coordX][coordY].set_joueurs(self.compteur)
+        self.__cases[coordX][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
         self.__cases[coordX][coordY].ajout_pion()
 
     def quel_type_case(self, coordX, coordY):
@@ -245,16 +251,16 @@ class Game:
         self.__cases[coordX][coordY].set_nbr_pions(0)
         self.__cases[coordX][coordY].set_joueurs(0)
         if coordX != 0:
-            self.__cases[coordX - 1][coordY].set_joueurs(self.compteur)
+            self.__cases[coordX - 1][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
             self.reaction_en_chaines(coordX - 1, coordY)
         if coordX != self.lignes - 1:
-            self.__cases[coordX + 1][coordY].set_joueurs(self.compteur)
+            self.__cases[coordX + 1][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
             self.reaction_en_chaines(coordX + 1, coordY)
         if coordY != 0:
-            self.__cases[coordX][coordY - 1].set_joueurs(self.compteur)
+            self.__cases[coordX][coordY - 1].set_joueurs(self.listejoueurs[self.compteur - 1])
             self.reaction_en_chaines(coordX, coordY - 1)
         if coordY != self.colonnes - 1:
-            self.__cases[coordX][coordY + 1].set_joueurs(self.compteur)
+            self.__cases[coordX][coordY + 1].set_joueurs(self.listejoueurs[self.compteur - 1])
             self.reaction_en_chaines(coordX, coordY + 1)
 
     def reaction_en_chaines(self, coordX, coordY):
