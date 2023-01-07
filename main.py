@@ -43,7 +43,7 @@ class Game:
         self.listejoueurs = None
         self.compteur = None
         self.__gameFrame = None
-        self.couleurs = {0: "gray", 1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "green", 7: "purple",
+        self.couleurs = {0: "gray", 1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "pink", 7: "purple",
                          8: "cyan"}
 
         self.poser = False
@@ -58,7 +58,7 @@ class Game:
             .grid(row=0, column=0)
 
         self.__columnText = Text(self.__selectionFrame, height=1, width=20, bg='white')
- 
+
         self.__columnText.grid(row=0, column=1)
 
         Label(self.__selectionFrame, text="Nombre de ligne(s) : ") \
@@ -90,22 +90,19 @@ class Game:
             self.startGame()
         else:
             print("NOP3")
+
     def startGame(self):
 
         self.__cases = [[Case(self.quel_type_case(i, j), 0, 0) for j in range(self.colonnes)] for i in
                         range(self.lignes)]
         self.listejoueurs = [1, 2, 3, 4]
-        self.compteur = random.randint(1, len(self.listejoueurs) - 1)
+
+        self.compteur = self.listejoueurs[0]
         self.nombre_joueurs()
-        self.CompteurJoueur()
 
         self.__gameFrame = tkinter.Frame(self.__root)
         self.affichage()
         self.__gameFrame.grid(row=0, column=0, rowspan=5)
-
-    def CompteurJoueur(self):
-        for k in range(1, self.nbrjoueurs):
-            self.listejoueurs.append(k)
 
     def Gagnant(self):
         print(len(self.listejoueurs))
@@ -115,25 +112,28 @@ class Game:
             return False
 
     def Tour(self):
+        print(self.listejoueurs)
         if not self.Gagnant():
             if self.poser:
-                print(self.listejoueurs, "", len(self.listejoueurs))
-                if not self.PossiblePoserPion():
-                    self.listejoueurs.remove(self.compteur)
-                    self.Tour()
-                if self.compteur >= len(self.listejoueurs) - 1:
-                    self.compteur = self.listejoueurs[0]
+                if self.compteur == len(self.listejoueurs):
+                    self.compteur = 1
                 else:
                     self.compteur += 1
-
+                if not self.PossiblePoserPion():
+                    print(self.listejoueurs, self.compteur)
+                    self.listejoueurs.pop(self.compteur -1)
+                    self.Tour()
             else:
-
-                if self.compteur == len(self.listejoueurs) - 1:
-                    self.compteur = self.listejoueurs[0]
+                if self.compteur == len(self.listejoueurs):
+                    self.compteur = 1
                     self.poser = True
                 else:
                     self.compteur += 1
+            canvas = Canvas(self.__selectionFrame, width=64, height=64, bg='white')
 
+            canvas.create_oval(0, 64, 64, 0, fill=self.couleurs[self.compteur])
+
+            canvas.grid(column=0, row=4)
         else:
             self.FinDePartie()
 
@@ -143,7 +143,7 @@ class Game:
     def PossiblePoserPion(self):
         for lignes in self.__cases:
             for case in lignes:
-                if (case.get_joueurs() == self.compteur):
+                if case.get_joueurs() == self.compteur:
                     return True
         else:
             return False
@@ -170,11 +170,7 @@ class Game:
         coordonate_2_pionts = (8, 28, 28, 48)
         coordonate_3_pionts = (8, 24, 24, 40, 40, 56)
 
-        canvas = Canvas(self.__selectionFrame, width=64, height=64, bg='white')
 
-        canvas.create_oval(0, 64, 64, 0, fill=self.couleurs[self.compteur])
-
-        canvas.grid(column=0, row=4)
 
         for x in range(len(self.__cases)):
             for y in range(len(self.__cases[x])):
@@ -220,7 +216,6 @@ class Game:
                 self.ajouter_pion(coordX, coordY)
             self.Tour()
             self.affichage()
-
 
     def ajouter_pion(self, coordX, coordY):
         self.__cases[coordX][coordY].set_joueurs(self.compteur)
