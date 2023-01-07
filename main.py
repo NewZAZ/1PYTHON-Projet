@@ -1,7 +1,6 @@
 import random
 import tkinter
 from tkinter import *
-from PIL import Image, ImageTk
 
 
 class Case:
@@ -184,10 +183,6 @@ class Game:
                     case.set_changed(False)
                     canvas1 = tkinter.Canvas(self.__gameFrame)
                     canvas1.grid(row=x, column=y)
-                    image1 = Image.open("img/green_1.png")
-                    image1.resize((64, 64), Image.LANCZOS)
-                    test = ImageTk.PhotoImage(image1)
-                    tkinter.Label(image=test)
                     canvas1.config(width=64, height=64, highlightthickness=1, bd=0, bg='white')
 
                     if case.get_nbrpions() == 1:
