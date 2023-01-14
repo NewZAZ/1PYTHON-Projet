@@ -4,32 +4,32 @@ from tkinter import messagebox as mb
 
 
 class Case:
-    def __init__(self, nbrmaxpions, nbrpions=0, joueurs=0):
-        self.__nbrpions = nbrpions
-        self.__nbrmaxpions = nbrmaxpions
-        self.__joueurs = joueurs
+    def __init__(self, max_pawn, pawn=0, player=0):
+        self.__pawn = pawn
+        self.__max_pawn = max_pawn
+        self.__player = player
         self.__has_changed = True
 
-    def set_joueurs(self, x):
-        self.__joueurs = x
+    def set_player(self, x):
+        self.__player = x
         self.set_changed(True)
 
-    def get_joueurs(self):
-        return self.__joueurs
+    def get_player(self):
+        return self.__player
 
-    def ajout_pion(self):
-        self.__nbrpions += 1
+    def increment_pawn(self):
+        self.__pawn += 1
         self.set_changed(True)
 
-    def set_nbr_pions(self, x):
-        self.__nbrpions = x
+    def set_pawn(self, x):
+        self.__pawn = x
         self.set_changed(True)
 
-    def get_nbrpions(self):
-        return self.__nbrpions
+    def get_pawn(self):
+        return self.__pawn
 
-    def get_nbrmaxpions(self):
-        return self.__nbrmaxpions
+    def get_max_pawn(self):
+        return self.__max_pawn
 
     def has_changed(self):
         return self.__has_changed
@@ -40,6 +40,10 @@ class Case:
 
 class Game:
     def __init__(self):
+        self.__amount_players = None
+        self.__rows = None
+        self.__columns = None
+        self.__place = False
         self.__cases = None
         self.__nextPlayerCanvas = None
         self.__playerSelectCanvas = None
@@ -47,11 +51,10 @@ class Game:
         self.__columnText = None
         self.__selectionFrame = None
         self.__isStarted = False
-        self.listejoueurs = []
-        self.compteur = 1
+        self.__players = []
+        self.__counter = 1
         self.__gameFrame = None
-        self.__colors = {1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "pink", 7: "purple",
-                         8: "cyan"}
+        self.__colors = {1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "pink", 7: "purple", 8: "cyan"}
 
         self.__root = tkinter.Tk()
         self.__root.title("Jeux python")
@@ -113,12 +116,12 @@ class Game:
         startButton.grid(row=2, column=0)
 
     def selectPlayer(self, canvas, color):
-        if self.listejoueurs.count(color) == 1:
+        if self.__players.count(color) == 1:
             canvas.config(bg='white')
-            self.listejoueurs.remove(color)
+            self.__players.remove(color)
         else:
             canvas.config(bg='green')
-            self.listejoueurs.append(color)
+            self.__players.append(color)
 
     def canStart(self):
 
@@ -133,8 +136,8 @@ class Game:
         columns = eval(columnResult)
         rows = eval(rowResult)
 
-        if self.taille_jeu((int(columns)), int(rows)):
-            if len(self.listejoueurs) > 1:
+        if self.is_good_game_size((int(columns)), int(rows)):
+            if len(self.__players) > 1:
                 self.startGame()
             else:
                 mb.showerror("Erreur", "Veuillez choisir minimum 2 joueurs !")
@@ -145,94 +148,84 @@ class Game:
         self.__selectionFrame.destroy()
         self.__isStarted = True
 
-        self.poser = False
-        self.__cases = [[Case(self.quel_type_case(i, j), 0, 0) for j in range(self.colonnes)] for i in
-                        range(self.lignes)]
+        self.__place = False
+        self.__cases = [[Case(self.case_type(i, j), 0, 0) for j in range(self.__columns)] for i in
+                        range(self.__rows)]
 
-        self.compteur = 1
-        self.nombre_joueurs()
-        self.showNextPlayer()
+        self.__counter = 1
+        self.show_next_player()
 
         self.__gameFrame = tkinter.Frame(self.__root)
-        self.affichage()
+        self.show_game()
         self.__gameFrame.grid(row=0, column=0, rowspan=5)
 
-    def Gagnant(self):
-        if len(self.listejoueurs) == 1:
+    def has_winner(self):
+        if len(self.__players) == 1:
             return True
         else:
             return False
 
-    def Tour(self):
+    def handle_round(self):
         if not self.__isStarted:
             return
-        if not self.Gagnant():
-            if self.poser:
-                if self.compteur == len(self.listejoueurs):
-                    self.compteur = 1
+        if not self.has_winner():
+            if self.__place:
+                if self.__counter == len(self.__players):
+                    self.__counter = 1
                 else:
-                    self.compteur += 1
-                if not self.PossiblePoserPion():
-                    self.listejoueurs.pop(self.compteur - 1)
-                    self.compteur -= 1
-                    self.Tour()
+                    self.__counter += 1
+                if not self.can_place_pawn():
+                    self.__players.pop(self.__counter - 1)
+                    self.__counter -= 1
+                    self.handle_round()
             else:
-                if self.compteur == len(self.listejoueurs):
-                    self.compteur = 1
-                    self.poser = True
+                if self.__counter == len(self.__players):
+                    self.__counter = 1
+                    self.__place = True
                 else:
-                    self.compteur += 1
-            self.showNextPlayer()
+                    self.__counter += 1
+            self.show_next_player()
             return True
         else:
-            self.FinDePartie()
+            self.game_finish()
             return False
 
-    def showNextPlayer(self):
+    def show_next_player(self):
         if not self.__isStarted:
             return
         self.__nextPlayerCanvas = Canvas(self.__root, width=64, height=64)
-
-        print(self.listejoueurs, self.compteur - 1)
-        self.__nextPlayerCanvas.create_oval(8, 56, 56, 8, fill=self.__colors[self.listejoueurs[self.compteur - 1]])
+        self.__nextPlayerCanvas.create_oval(8, 56, 56, 8, fill=self.__colors[self.__players[self.__counter - 1]])
 
         self.__nextPlayerCanvas.grid(pady=10, column=0, row=5)
         self.__nextPlayerCanvas.config(bg='black', borderwidth=0, highlightthickness=0)
 
-    def FinDePartie(self):
+    def game_finish(self):
         self.show_selection()
         self.__gameFrame.destroy()
         self.__nextPlayerCanvas.delete("all")
-        mb.showinfo("Gagnant", "le joueur " + self.__colors[self.listejoueurs[0]] + " a gagner !")
+        mb.showinfo("Gagnant", "le joueur " + self.__colors[self.__players[0]] + " a gagner !")
         self.__isStarted = False
         self.clear_game()
 
-    def PossiblePoserPion(self):
-        for lignes in self.__cases:
-            for case in lignes:
-                if case.get_joueurs() == self.listejoueurs[self.compteur - 1]:
+    def can_place_pawn(self):
+        for rows in self.__cases:
+            for case in rows:
+                if case.get_player() == self.__players[self.__counter - 1]:
                     return True
         else:
             return False
 
-    def taille_jeu(self, column, row):
+    def is_good_game_size(self, column, row):
         if 3 <= row <= 10 and 3 <= column <= 12:
-            self.lignes = row
-            self.colonnes = column
+            self.__rows = row
+            self.__columns = column
             return True
         else:
 
             return False
 
-    def nombre_joueurs(self):
-        # self.nbrjoueurs = eval(input("Nombre de joueurs, si 1 joueur, une IA sera votre adversaire"))
-        self.nbrjoueurs = len(self.listejoueurs)
-        if 1 < self.nbrjoueurs < 9:
-            return self.nbrjoueurs
-        else:
-            return self.nombre_joueurs()
 
-    def affichage(self):
+    def show_game(self):
         if not self.__isStarted:
             return
         coordonate_1_pionts = (16, 48)
@@ -249,96 +242,96 @@ class Game:
                     canvas1.config(width=64, height=64, highlightbackground="red", highlightcolor="red",
                                    highlightthickness=1, bg='#004F61')
 
-                    if case.get_nbrpions() == 1:
+                    if case.get_pawn() == 1:
                         canvas1.create_oval(x + coordonate_1_pionts[0], y + coordonate_1_pionts[0],
                                             x + coordonate_1_pionts[1], y + coordonate_1_pionts[1],
-                                            fill=self.__colors[case.get_joueurs()])
-                    elif case.get_nbrpions() == 2:
+                                            fill=self.__colors[case.get_player()])
+                    elif case.get_pawn() == 2:
                         canvas1.create_oval(x + coordonate_2_pionts[0], y + coordonate_2_pionts[0],
                                             x + coordonate_2_pionts[1], y + coordonate_2_pionts[1],
-                                            fill=self.__colors[case.get_joueurs()])
+                                            fill=self.__colors[case.get_player()])
                         canvas1.create_oval(x + coordonate_2_pionts[2], y + coordonate_2_pionts[2],
                                             x + coordonate_2_pionts[3], y + coordonate_2_pionts[3],
-                                            fill=self.__colors[case.get_joueurs()])
-                    elif case.get_nbrpions() == 3:
+                                            fill=self.__colors[case.get_player()])
+                    elif case.get_pawn() == 3:
                         canvas1.create_oval(x + coordonate_3_pionts[0], y + coordonate_3_pionts[0],
                                             x + coordonate_3_pionts[1], y + coordonate_3_pionts[1],
-                                            fill=self.__colors[case.get_joueurs()])
+                                            fill=self.__colors[case.get_player()])
                         canvas1.create_oval(x + coordonate_3_pionts[2], y + coordonate_3_pionts[2],
                                             x + coordonate_3_pionts[3], y + coordonate_3_pionts[3],
-                                            fill=self.__colors[case.get_joueurs()])
+                                            fill=self.__colors[case.get_player()])
                         canvas1.create_oval(x + coordonate_3_pionts[4], y + coordonate_3_pionts[4],
                                             x + coordonate_3_pionts[5], y + coordonate_3_pionts[5],
-                                            fill=self.__colors[case.get_joueurs()])
-                    canvas1.bind('<Button-1>', lambda event, coord=(x, y): self.jouer(coord))
+                                            fill=self.__colors[case.get_player()])
+                    canvas1.bind('<Button-1>', lambda event, coord=(x, y): self.play(coord))
 
-    def jouer(self, coord):
+    def play(self, coord):
         coordX = coord[0]
         coordY = coord[1]
         case = self.__cases[coordX][coordY]
-        if case.get_joueurs() == self.listejoueurs[self.compteur - 1] or case.get_joueurs() == 0:
+        if case.get_player() == self.__players[self.__counter - 1] or case.get_player() == 0:
             case.set_changed(True)
-            if case.get_nbrpions() == case.get_nbrmaxpions():
-                self.explosion(coordX, coordY)
+            if case.get_pawn() == case.get_max_pawn():
+                self.blast(coordX, coordY)
             else:
-                self.ajouter_pion(coordX, coordY)
-            if self.Tour():
-                self.affichage()
+                self.put_pawn(coordX, coordY)
+            if self.handle_round():
+                self.show_game()
 
-    def ajouter_pion(self, coordX, coordY):
-        self.__cases[coordX][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
-        self.__cases[coordX][coordY].ajout_pion()
+    def put_pawn(self, coordX, coordY):
+        self.__cases[coordX][coordY].set_player(self.__players[self.__counter - 1])
+        self.__cases[coordX][coordY].increment_pawn()
 
-    def quel_type_case(self, coordX, coordY):
+    def case_type(self, coordX, coordY):
         if coordX == 0 and coordY == 0:
             return 1  # La case est un coin
-        if coordX == 0 and coordY == self.colonnes - 1:
+        if coordX == 0 and coordY == self.__columns - 1:
             return 1  # La case est un coin
-        if coordX == self.lignes - 1 and coordY == 0:
+        if coordX == self.__rows - 1 and coordY == 0:
             return 1  # La case est un coin
-        if coordX == self.lignes - 1 and coordY == self.colonnes - 1:
+        if coordX == self.__rows - 1 and coordY == self.__columns - 1:
             return 1  # La case est un coin
         if coordX == 0:
             return 2  # La case est un côté
-        if coordX == self.lignes - 1:
+        if coordX == self.__rows - 1:
             return 2  # La case est un côté
         if coordY == 0:
             return 2  # La case est un côté
-        if coordY == self.colonnes - 1:
+        if coordY == self.__columns - 1:
             return 2  # La case est un côté
         else:
             return 3  # La case n'est ni un côté ni un coin
 
-    def explosion(self, coordX, coordY):  # Je change l'attribut de la couleur joueur des cases   A FAIRE
-        self.__cases[coordX][coordY].set_nbr_pions(0)
-        self.__cases[coordX][coordY].set_joueurs(0)
+    def blast(self, coordX, coordY):  # Je change l'attribut de la couleur joueur des cases   A FAIRE
+        self.__cases[coordX][coordY].set_pawn(0)
+        self.__cases[coordX][coordY].set_player(0)
         if coordX != 0:
-            self.__cases[coordX - 1][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
-            self.reaction_en_chaines(coordX - 1, coordY)
-        if coordX != self.lignes - 1:
-            self.__cases[coordX + 1][coordY].set_joueurs(self.listejoueurs[self.compteur - 1])
-            self.reaction_en_chaines(coordX + 1, coordY)
+            self.__cases[coordX - 1][coordY].set_player(self.__players[self.__counter - 1])
+            self.chain_reaction(coordX - 1, coordY)
+        if coordX != self.__rows - 1:
+            self.__cases[coordX + 1][coordY].set_player(self.__players[self.__counter - 1])
+            self.chain_reaction(coordX + 1, coordY)
         if coordY != 0:
-            self.__cases[coordX][coordY - 1].set_joueurs(self.listejoueurs[self.compteur - 1])
-            self.reaction_en_chaines(coordX, coordY - 1)
-        if coordY != self.colonnes - 1:
-            self.__cases[coordX][coordY + 1].set_joueurs(self.listejoueurs[self.compteur - 1])
-            self.reaction_en_chaines(coordX, coordY + 1)
+            self.__cases[coordX][coordY - 1].set_player(self.__players[self.__counter - 1])
+            self.chain_reaction(coordX, coordY - 1)
+        if coordY != self.__columns - 1:
+            self.__cases[coordX][coordY + 1].set_player(self.__players[self.__counter - 1])
+            self.chain_reaction(coordX, coordY + 1)
 
-    def reaction_en_chaines(self, coordX, coordY):
-        if self.__cases[coordX][coordY].get_nbrpions() == self.__cases[coordX][coordY].get_nbrmaxpions():
-            self.explosion(coordX, coordY)
+    def chain_reaction(self, coordX, coordY):
+        if self.__cases[coordX][coordY].get_pawn() == self.__cases[coordX][coordY].get_max_pawn():
+            self.blast(coordX, coordY)
         else:
-            self.ajouter_pion(coordX, coordY)
+            self.put_pawn(coordX, coordY)
 
     def clear_game(self):
-        self.listejoueurs = []
-        self.compteur = 1
-        self.poser = False
+        self.__players = []
+        self.__counter = 1
+        self.__place = False
         self.__cases = []
 
-Game()
-# A chaque tour -> on change de joueur,
+
+Game()  # A chaque tour -> on change de joueur,
 #                  es ce que le joueur peut jouer,
 #                   si le joueur peut pas jouer, le supprimer des tours, et passer au tour suivant
 # si le joueur joue, lui demander les coordonnées, si il peut poser, sur SA Couleur ou case vide
