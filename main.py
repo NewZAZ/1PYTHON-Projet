@@ -42,20 +42,20 @@ class Case:
 class Game:
 
     def __init__(self):
-        self.__amount_players: int = None
-        self.__rows: int = None
-        self.__columns: int = None
+        self.__selection_frame: Frame = None
+        self.__game_frame: Frame = None
+        self.__amount_players: int = 0
+        self.__rows: int = 0
+        self.__columns: int = 0
+        self.__counter: int = 1
         self.__place: bool = False
-        self.__cases: List[List[Case]] = []
+        self.__is_started: bool = False
         self.__next_player_canvas: Canvas = None
         self.__player_select_canvas: Canvas = None
         self.__rowText: Text = None
         self.__columnText: Text = None
-        self.__selection_frame: Frame = None
-        self.__is_started: bool = False
         self.__players: List[int] = []
-        self.__counter: int = 1
-        self.__game_frame: Frame = None
+        self.__cases: List[List[Case]] = []
         self.__colors: Dict[int, str] = {1: "blue", 2: "red", 3: "yellow", 4: "green", 5: "orange", 6: "pink",
                                          7: "purple", 8: "cyan"}
 
@@ -164,15 +164,13 @@ class Game:
         self.show_game()
         self.__game_frame.grid(row=0, column=0, rowspan=5)
 
-    def has_winner(self):
+    def has_winner(self) -> bool:
         if len(self.__players) == 1:
             return True
-        else:
-            return False
 
-    def handle_round(self):
+    def handle_round(self) -> bool:
         if not self.__is_started:
-            return
+            return False
         if not self.has_winner():
             if self.__place:
                 if self.__counter == len(self.__players):
@@ -193,7 +191,6 @@ class Game:
             return True
         else:
             self.game_finish()
-            return False
 
     def show_next_player(self):
         if not self.__is_started:
@@ -212,13 +209,11 @@ class Game:
         self.__is_started = False
         self.clear_game()
 
-    def can_place_pawn(self):
+    def can_place_pawn(self) -> bool:
         for rows in self.__cases:
             for case in rows:
                 if case.get_player() == self.__players[self.__counter - 1]:
                     return True
-        else:
-            return False
 
     def show_game(self):
         if not self.__is_started:
@@ -277,7 +272,7 @@ class Game:
         self.__cases[coord_x][coord_y].set_player(self.__players[self.__counter - 1])
         self.__cases[coord_x][coord_y].increment_pawn()
 
-    def case_type(self, coord_x, coord_y):
+    def case_type(self, coord_x, coord_y) -> int:
         if coord_x == 0 and coord_y == 0:
             return 1  # La case est un coin
         if coord_x == 0 and coord_y == self.__columns - 1:
