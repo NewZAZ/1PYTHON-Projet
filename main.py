@@ -15,7 +15,7 @@ class Case:
         self.__player = x
         self.set_changed(True)
 
-    def get_player(self):
+    def get_player(self) -> int:
         return self.__player
 
     def increment_pawn(self):
@@ -26,13 +26,13 @@ class Case:
         self.__pawn = x
         self.set_changed(True)
 
-    def get_pawn(self):
+    def get_pawn(self) -> int:
         return self.__pawn
 
-    def get_max_pawn(self):
+    def get_max_pawn(self) -> int:
         return self.__max_pawn
 
-    def has_changed(self):
+    def has_changed(self) -> bool:
         return self.__has_changed
 
     def set_changed(self, boolean):
